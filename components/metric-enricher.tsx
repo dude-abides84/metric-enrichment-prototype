@@ -27,11 +27,15 @@ function initialConfig(sheet: ParsedSheet): MetricConfig {
     rules: [
       {
         id: makeId(),
-        condition: {
-          column: firstNumeric?.name ?? "",
-          comparator: ">",
-          value: "100",
-        },
+        logic: "AND",
+        conditions: [
+          {
+            id: makeId("cond"),
+            column: firstNumeric?.name ?? "",
+            comparator: ">",
+            value: "100",
+          },
+        ],
         result: {
           baseType: firstNumeric ? "column" : "constant",
           baseColumn: firstNumeric?.name ?? "",

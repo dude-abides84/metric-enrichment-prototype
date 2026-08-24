@@ -19,11 +19,15 @@ function defaultRule(columns: ColumnInfo[]): Rule {
   const firstNumeric = columns.find((c) => c.kind === "numeric")
   return {
     id: makeId(),
-    condition: {
-      column: firstNumeric?.name ?? "",
-      comparator: ">",
-      value: "",
-    },
+    logic: "AND",
+    conditions: [
+      {
+        id: makeId("cond"),
+        column: firstNumeric?.name ?? "",
+        comparator: ">",
+        value: "",
+      },
+    ],
     result: {
       baseType: firstNumeric ? "column" : "constant",
       baseColumn: firstNumeric?.name ?? "",

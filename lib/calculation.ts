@@ -33,7 +33,10 @@ export interface ResultExpr {
   operand: number
 }
 
+export type LogicOp = "AND" | "OR"
+
 export interface Condition {
+  id: string
   column: string
   comparator: Comparator
   /** compared as number for numeric columns, string for text columns */
@@ -42,7 +45,10 @@ export interface Condition {
 
 export interface Rule {
   id: string
-  condition: Condition
+  /** one or more conditions combined with `logic` */
+  conditions: Condition[]
+  /** how multiple conditions are combined */
+  logic: LogicOp
   result: ResultExpr
 }
 
@@ -102,6 +108,20 @@ export function evaluateCondition(
   }
 }
 
+/** Evaluate a rule's conditions combined with its AND/OR logic. */
+export function evaluateConditions(
+  conditions: Condition[],
+  logic: LogicOp,
+  row: Record<string, unknown>,
+  columns: ColumnInfo[],
+): boolean {
+  if (conditions.length === 0) return false
+  if (logic === "OR") {
+    return conditions.some((c) => evaluateCondition(c, row, columns))
+  }
+  return conditions.every((c) => evaluateCondition(c, row, columns))
+}
+
 export function evaluateResult(
   result: ResultExpr,
   row: Record<string, unknown>,
@@ -135,7 +155,7 @@ export function evaluateMetric(
   columns: ColumnInfo[],
 ): number | null {
   for (const rule of config.rules) {
-    if (evaluateCondition(rule.condition, row, columns)) {
+    if (evaluateConditions(rule.conditions, rule.logic, row, columns)) {
       return evaluateResult(rule.result, row)
     }
   }

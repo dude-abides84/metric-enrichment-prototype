@@ -14,6 +14,7 @@ import type { ParsedSheet } from "@/lib/spreadsheet"
 import {
   describeResult,
   evaluateCondition,
+  evaluateConditions,
   evaluateMetric,
   tidyNumber,
   type MetricConfig,
@@ -54,7 +55,8 @@ export function FormulaPreview({ sheet, config }: FormulaPreviewProps) {
   const matchedRuleId = useMemo(() => {
     if (!row) return null
     for (const rule of config.rules) {
-      if (evaluateCondition(rule.condition, row, sheet.columns)) return rule.id
+      if (evaluateConditions(rule.conditions, rule.logic, row, sheet.columns))
+        return rule.id
     }
     return null
   }, [config.rules, row, sheet.columns])
@@ -90,9 +92,33 @@ export function FormulaPreview({ sheet, config }: FormulaPreviewProps) {
                   <span className="font-semibold text-muted-foreground">
                     {i === 0 ? "IF" : "ELSE IF"}
                   </span>
-                  <Chip tone="column">{rule.condition.column || "?"}</Chip>
-                  <Chip tone="op">{rule.condition.comparator}</Chip>
-                  <Chip tone="value">{rule.condition.value || "?"}</Chip>
+                  {rule.conditions.map((condition, ci) => {
+                    const condMatched = row
+                      ? evaluateCondition(condition, row, sheet.columns)
+                      : null
+                    return (
+                      <span
+                        key={condition.id}
+                        className="inline-flex flex-wrap items-center gap-1"
+                      >
+                        {ci > 0 && (
+                          <Chip tone="op">
+                            <span className="font-semibold">{rule.logic}</span>
+                          </Chip>
+                        )}
+                        <span
+                          className={cn(
+                            "inline-flex items-center gap-1",
+                            condMatched === false && "opacity-45",
+                          )}
+                        >
+                          <Chip tone="column">{condition.column || "?"}</Chip>
+                          <Chip tone="op">{condition.comparator}</Chip>
+                          <Chip tone="value">{condition.value || "?"}</Chip>
+                        </span>
+                      </span>
+                    )
+                  })}
                 </div>
                 <div className="mt-1 flex flex-wrap items-center gap-1">
                   <span className="font-semibold text-muted-foreground">
